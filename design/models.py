@@ -40,8 +40,8 @@ class Category(models.Model):
 class Application(models.Model):
     applicant = models.ForeignKey(CustomUser, on_delete=models.CASCADE, verbose_name="Пользователь")
     title = models.CharField(max_length=150, verbose_name="Название заявки")
-    description = models.TextField(verbose_name="Описание заявки")
-    image = models.FileField(upload_to='applications/', verbose_name="Загрузите фото заявки")
+    description = models.TextField(max_length=500, verbose_name="Описание заявки")
+    image = models.FileField(upload_to='images/', verbose_name="Загрузите фото заявки")
     category = models.ForeignKey(Category, on_delete=models.CASCADE, verbose_name='Категория заявки')
     STATUS_CHOICES = [
         ('N', "Новая"),

@@ -10,10 +10,17 @@ from .forms import CustomUserCreatingForm, ApplicationForm
 from .models import CustomUser, Application
 
 def index(request):
-    return render(
-        request,
-        'index.html'
-    )
+    completed_applications = Application.objects.filter(status="D").order_by('-date')[:4]
+    in_progress = Application.objects.filter(status="P").count()
+    slider = Application.objects.all().order_by('-date')[:3]
+
+    context = {
+        'completed_applications': completed_applications,
+        'in_progress': in_progress,
+        'slider': slider
+    }
+
+    return render(request, 'index.html', context)
 
 
 def logout_view(request):
@@ -57,12 +64,13 @@ class Profile(LoginRequiredMixin, generic.DetailView):
         status_filter = self.request.GET.get('status', '')
 
         if status_filter:
-            application = Application.objects.filter(applicant=self.request.user, status=status_filter).order_by('date')
+            applications = Application.objects.filter(applicant=self.request.user, status=status_filter).order_by('-date')
         else:
-            application = Application.objects.filter(applicant=self.request.user).order_by('date')
+            applications = Application.objects.filter(applicant=self.request.user).order_by('-date')
 
-        context['application'] = application
+        context['applications'] = applications
         context['status_filter'] = status_filter
+        context['status_choices'] = Application.STATUS_CHOICES
 
         return context
 
@@ -75,3 +83,5 @@ def delete_application(request, pk):
             messages.success(request, 'Заявка удалена')
         else:
             messages.error(request,'Вы не можете удалить заявки, которые имеют статус "Принято в работу" и "Выполнено"')
+
+    return redirect('profile')
