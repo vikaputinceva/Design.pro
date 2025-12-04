@@ -1,44 +1,114 @@
 {% extends 'basic.html' %}
+{% load static %}
 
-<title>{% block title %}Главная - Design.Pro{% endblock %}</title>
+{% block title %}Главная - Design.Pro{% endblock %}
 
 {% block content %}
-<h1>Design.Pro - Главная страница</h1>
-{% if user.is_authenticated and not user.is_staff %}
-    <div class="my-4 d-flex p-3 w-100 bg-success justify-content-between align-self-center align-items-center rounded-3">
-        <span class="text-light fs-4">Хотите оставить заявку?</span>
-        <a class="btn btn-light" href="{% url 'application-create' %}">Создать заявку</a>
-    </div>
-    <p>Количество заявок в статусе "Принято в работу": {{ in_progress }}</p>
+<div class="main-content">
+    <h1 class="page-title">Design.Pro - Платформа дизайнерских проектов</h1>
 
-    <div>
-        {% for application in completed_applications %}
-            <div class="py-3">
-                <div class="d-flex align-items-center gap-2">
-                    <img style="height: 150px; max-width: 150px; object-fit: cover;" src="{{ application.image.url }}" alt="Фото проекта">
-                    <div class="flex-grow-1">
-                        <div class="d-flex justify-content-between">
-                            <p class="d-flex align-items-center gap-1 fs-5">{{ application.title }} {% if application.status == "N" %}
-                                    <span class="text-light bg-warning px-2 py-1 rounded-2">Новая</span>
-                                {% elif application.status == "P" %}
-                                    <span class="text-light bg-info px-2 py-1 rounded-2">Принято в работу</span>
-                                {% elif application.status == "D" %}
-                                    <span class="text-light bg-success px-2 py-1 rounded-2">Выполнено</span>
-                                {% endif %}
-                            </p>
-                            <span>Категория: {{ application.category }}</span>
+    {% if user.is_authenticated and not user.is_staff %}
+        <div class="create-prompt">
+            <p class="prompt-text">Есть идея для дизайнерского проекта?</p>
+            <a class="create-button" href="{% url 'application-create' %}">
+                <i class="bi bi-plus-circle me-2"></i>Создать заявку
+            </a>
+        </div>
+
+        <div class="stats-display">
+            <i class="bi bi-graph-up"></i>
+            Заявок в работе: <strong>{{ in_progress }}</strong>
+        </div>
+
+        {% if completed_applications %}
+            {% for application in completed_applications %}
+                <div class="application-item">
+                    <div class="app-header">
+                        <div class="app-title-section">
+                            <h3 class="app-title">{{ application.title }}</h3>
+                            {% if application.status == "N" %}
+                                <span class="status-badge status-new">Новая</span>
+                            {% elif application.status == "P" %}
+                                <span class="status-badge status-progress">В работе</span>
+                            {% elif application.status == "D" %}
+                                <span class="status-badge status-completed">Выполнено</span>
+                            {% endif %}
                         </div>
-                        <div class="d-flex justify-content-end">
-                            <p>Дата создания: {{ application.date|date:"d.m.Y H:i" }}</p>
+                        <div class="category-info">
+                            <i class="bi bi-tag"></i>
+                            {{ application.category|default:"Без категории" }}
                         </div>
-                        <div class="d-flex justify-content-between">
-                            <p style="width: 500px; height: 50px; text-overflow: ellipsis; overflow: hidden;">{{ application.description }}</p>
-                            <p>Создатель заявки: {{ application.applicant.username }}</p>
+                    </div>
+
+                    <div class="app-body">
+                        <div class="app-image-container">
+                            {% if application.image %}
+                                <img class="app-image" src="{{ application.image.url }}" alt="{{ application.title }}">
+                            {% else %}
+                                <div class="image-placeholder">
+                                    <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="app-details">
+                            <p class="app-description">{{ application.description|truncatechars:200 }}</p>
+
+                            <div class="app-footer">
+                                <div class="app-author">
+                                    <i class="bi bi-person-circle"></i>
+                                    {{ application.applicant.username }}
+                                </div>
+                                <div class="app-date">
+                                    <i class="bi bi-calendar"></i>
+                                    {{ application.date|date:"d.m.Y H:i" }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                {% if not forloop.last %}
+                    <hr class="app-divider">
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <div class="role-card" style="background: #f8f9fa; padding: 40px; text-align: center;">
+                <div class="role-icon">
+                    <i class="bi bi-folder-plus" style="color: #6c757d; font-size: 3rem;"></i>
+                </div>
+                <h3 class="role-title">Нет выполненных заявок</h3>
+                <p class="role-description">Создайте свою первую заявку</p>
+                <a href="{% url 'application-create' %}" class="create-button">
+                    <i class="bi bi-plus-circle me-2"></i>Создать заявку
+                </a>
             </div>
-        {% endfor %}
-    </div>
-{% endif %}
+        {% endif %}
+
+    {% else %}
+        <div class="roles-container">
+            <div class="role-card">
+                <div class="role-icon" style="color: #0d6efd;">
+                    <i class="bi bi-briefcase"></i>
+                </div>
+                <h3 class="role-title">Заказчикам</h3>
+                <p class="role-description">Размещайте заявки на дизайнерские услуги и находите лучших исполнителей</p>
+                <a href="{% url 'register' %}" class="btn btn-primary">
+                    <i class="bi bi-person-plus me-2"></i>Начать работу
+                </a>
+            </div>
+
+            <div class="role-card">
+                <div class="role-icon" style="color: #198754;">
+                    <i class="bi bi-palette"></i>
+                </div>
+                <h3 class="role-title">Дизайнерам</h3>
+                <p class="role-description">Находите интересные проекты, развивайте портфолио и зарабатывайте</p>
+                <a href="{% url 'register' %}" class="btn btn-success">
+                    <i class="bi bi-arrow-right-circle me-2"></i>Присоединиться
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

@@ -1,55 +1,134 @@
-.form > p{
+header {
     display: flex;
-    flex-direction: column;
-}
-.slider-container {
-    position: relative;
     width: 100%;
-    overflow: hidden;
+    background: linear-gradient(90deg, #198754 0%, #20c997 100%);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.slider-wrapper {
+.header-container {
     display: flex;
-    transition: transform 0.5s ease-in-out;
-}
-
-.slider-item {
-    position: relative;
-    min-width: 100%;
-    box-sizing: border-box;
-}
-
-.slider-image {
+    justify-content: space-between;
+    align-items: center;
     width: 100%;
-    height: 300px;
-    object-fit: cover;
+    padding: 12px 0;
 }
 
-.slider-caption {
-    position: absolute;
-    bottom: 20px;
-    left: 60px;
-    color: #fff;
-    background: rgba(30, 78, 26, 0.5);
-    padding: 10px;
-    border-radius: 5px;
+/* Логотип */
+.logo-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    transition: transform 0.3s ease;
 }
 
-.prev-btn, .next-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background-color: #198754;
-    color: #fff;
-    border: none;
-    padding: 10px;
-    cursor: pointer;
-    font-size: 24px;
+.logo-link:hover {
+    transform: translateX(5px);
 }
 
-.prev-btn {
-    left: 10px;
+.logo-title {
+    display: inline-flex;
+    align-items: center;
+    color: white;
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-.next-btn {
-    right: 10px;}
+/* Навигация */
+.header-nav {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.nav-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    min-width: 120px;
+    text-align: center;
+    border: 2px solid transparent;
+}
+
+/* Ссылки для авторизованных пользователей */
+.nav-link.profile {
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.nav-link.logout {
+    background: rgba(220, 53, 69, 0.2);
+    border: 2px solid rgba(220, 53, 69, 0.4);
+}
+
+/* Ссылки для неавторизованных пользователей */
+.nav-link.register {
+    background: rgba(13, 110, 253, 0.2);
+    border: 2px solid rgba(13, 110, 253, 0.4);
+}
+
+.nav-link.login {
+    background: rgba(255, 193, 7, 0.2);
+    border: 2px solid rgba(255, 193, 7, 0.4);
+}
+
+/* Эффекты при наведении */
+.nav-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.nav-link.profile:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.nav-link.logout:hover {
+    background: rgba(220, 53, 69, 0.3);
+    border-color: rgba(220, 53, 69, 0.6);
+}
+
+.nav-link.register:hover {
+    background: rgba(13, 110, 253, 0.3);
+    border-color: rgba(13, 110, 253, 0.6);
+}
+
+.nav-link.login:hover {
+    background: rgba(255, 193, 7, 0.3);
+    border-color: rgba(255, 193, 7, 0.6);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .header-container {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px 0;
+    }
+    
+    .logo-title {
+        font-size: 1.6rem;
+    }
+    
+    .header-nav {
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+    }
+    
+    .nav-link {
+        width: 90%;
+        max-width: 300px;
+        min-width: auto;
+        margin: 0 auto;
+    }
+}
