@@ -4,5 +4,10 @@
 
 {% block content %}
 <h1>Design.Pro - Главная страница</h1>
-
+{% if user.is_authenticated and not user.is_staff %}
+    <div class="my-4 d-flex p-3 w-100 bg-success justify-content-between align-self-center align-items-center rounded-3">
+        <span class="text-light fs-4">Хотите оставить заявку?</span>
+        <a class="btn btn-light" href="{% url 'application-create' %}">Создать заявку</a>
+    </div>
+{% endif %}
 {% endblock %}

@@ -3,6 +3,8 @@ from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.views import generic
 from django.urls import reverse_lazy
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 from .forms import CustomUserCreatingForm, ApplicationForm
 from .models import CustomUser, Application
@@ -26,22 +28,50 @@ class Registration(generic.CreateView):
     success_url = reverse_lazy('login')
 
 
-def profile_view(request):
-    return render(request, 'main/profile.html')
 def create_application(request):
     if request.method == "POST":
         form = ApplicationForm(request.POST, request.FILES)
         if form.is_valid():
             application = form.save(commit=False)
             application.user = request.user
+            application.applicant = request.user
             application.save()
             return redirect('profile')
 
     else:
         form = ApplicationForm()
 
-    return render(request, 'main/create-application.html', {'form': form})
+    return render(request, 'main/application-create.html', {'form': form})
 
-def detail_application(request, pk):
+class Profile(LoginRequiredMixin, generic.DetailView):
+    model = CustomUser
+    template_name = 'main/profile.html'
+    context_object_name = 'user_profile'
+
+    def get_object(self):
+        return self.request.user
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        status_filter = self.request.GET.get('status', '')
+
+        if status_filter:
+            application = Application.objects.filter(applicant=self.request.user, status=status_filter).order_by('date')
+        else:
+            application = Application.objects.filter(applicant=self.request.user).order_by('date')
+
+        context['application'] = application
+        context['status_filter'] = status_filter
+
+        return context
+
+@login_required
+def delete_application(request, pk):
     application = get_object_or_404(Application, pk=pk)
-    return render(request, 'main/application-detail.html', {'application': application})
+    if application.applicant == request.user:
+        if application.status == 'N':
+            application.delete()
+            messages.success(request, 'Заявка удалена')
+        else:
+            messages.error(request,'Вы не можете удалить заявки, которые имеют статус "Принято в работу" и "Выполнено"')

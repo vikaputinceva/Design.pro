@@ -46,27 +46,16 @@ class CustomUserCreatingForm(forms.ModelForm):
 
 
 class ApplicationForm(forms.ModelForm):
-    title = forms.CharField(label='Заголовок заявки', widget=forms.TextInput)
+    title = forms.CharField(label='Название заявки', widget=forms.TextInput)
     description = forms.CharField(label='Описание заявки', widget=forms.Textarea)
-
-    # Функция для получения choices
-    def get_category_choices():
-        try:
-            return [(cat.id, cat.name) for cat in Category.objects.all()]
-        except:
-            return []  # временно пустой список если таблицы нет
-
-    category = forms.ChoiceField(
-        label='Категория заявки',
-        choices=get_category_choices,  # передаём функцию, а не результат
-        widget=forms.Select
-    )
-
     image = forms.FileField(label='Фото заявки', widget=forms.FileInput)
 
     class Meta:
         model = Application
         fields = ('title', 'description', 'category', 'image')
+        widgets = {
+            'category': forms.Select
+        }
 
     def clean_image(self):
         image = self.cleaned_data.get('image')
@@ -80,3 +69,9 @@ class ApplicationForm(forms.ModelForm):
             raise ValidationError("Файл должен быть в формате JPG, JPEG, PNG или BMP")
 
         return image
+
+    def save(self, commit=True):
+        application = super().save(commit=False)
+        if commit:
+            application.save()
+        return application
