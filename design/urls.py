@@ -1,3 +1,4 @@
+from django.contrib import admin
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
@@ -9,5 +10,6 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.Profile.as_view(), name='profile'),
     path('create/', views.create_application, name='application-create'),
-    path('application/<int:pk>/delete/', views.delete_application, name='application-delete')
+
+    path('admin/', admin.site.urls),
 ]

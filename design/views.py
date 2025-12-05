@@ -50,6 +50,7 @@ def create_application(request):
 
     return render(request, 'main/application-create.html', {'form': form})
 
+
 class Profile(LoginRequiredMixin, generic.DetailView):
     model = CustomUser
     template_name = 'main/profile.html'
@@ -73,6 +74,12 @@ class Profile(LoginRequiredMixin, generic.DetailView):
         context['status_choices'] = Application.STATUS_CHOICES
 
         return context
+
+
+class ApplicationDetailView(LoginRequiredMixin, generic.DetailView):
+    model = Application
+    template_name = 'main/application-detail.html'
+
 
 @login_required
 def delete_application(request, pk):

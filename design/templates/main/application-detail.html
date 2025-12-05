@@ -1,10 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'basic.html' %}
+{% block content %}
+    <h2>{{ application.title }}</h2>
+    <img class="w-25" src="{{ application.image.url }}" alt="Фото заявки">
+    <p><strong>Описание:</strong> {{ application.description }}</p>
+    <p><strong>Статус: </strong>
+        {% if application.status == "N" %}
+            <span class="text-light bg-warning px-2 py-1 rounded-2">Новая</span>
+        {% elif application.status == "P" %}
+            <span class="text-light bg-info px-2 py-1 rounded-2">Принято в работу</span>
+        {% elif application.status == "D" %}
+            <span class="text-light bg-success px-2 py-1 rounded-2">Выполнено</span>
+        {% endif %}
+    </p>
+    <p><strong>Дата создания:</strong> {{ application.date }}</p>
+    <p><strong>Категория:</strong> {{ application.category }}</p>
 
-</body>
-</html>
+    {% if user.is_staff and application.status == "N" %}
+        <a href="" class="btn btn-warning">Изменить статус заявки</a>
+    {% endif %}
+{% endblock %}
