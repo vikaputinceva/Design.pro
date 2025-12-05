@@ -1,21 +1,99 @@
 {% extends 'basic.html' %}
-{% block content %}
-    <h2>{{ application.title }}</h2>
-    <img class="w-25" src="{{ application.image.url }}" alt="Фото заявки">
-    <p><strong>Описание:</strong> {{ application.description }}</p>
-    <p><strong>Статус: </strong>
-        {% if application.status == "N" %}
-            <span class="text-light bg-warning px-2 py-1 rounded-2">Новая</span>
-        {% elif application.status == "P" %}
-            <span class="text-light bg-info px-2 py-1 rounded-2">Принято в работу</span>
-        {% elif application.status == "D" %}
-            <span class="text-light bg-success px-2 py-1 rounded-2">Выполнено</span>
-        {% endif %}
-    </p>
-    <p><strong>Дата создания:</strong> {{ application.date }}</p>
-    <p><strong>Категория:</strong> {{ application.category }}</p>
 
-    {% if user.is_staff and application.status == "N" %}
-        <a href="" class="btn btn-warning">Изменить статус заявки</a>
-    {% endif %}
+{% block title %}{{ application.title }}{% endblock %}
+
+{% block content %}
+<div class="detail-container">
+    <div class="detail-card">
+        <div class="detail-header">
+            <h2 class="detail-title">{{ application.title }}</h2>
+            <span class="detail-status {{ application.status }}">
+                {{ application.get_status_display }}
+            </span>
+        </div>
+
+        <div class="detail-body">
+            <div class="detail-images">
+                {% if application.image %}
+                    <div class="image-section">
+                        <h3 class="image-title">План помещения</h3>
+                        <img src="{{ application.image.url }}"
+                             class="detail-image"
+                             alt="План помещения">
+                    </div>
+                {% endif %}
+
+                {% if application.design_image %}
+                    <div class="image-section">
+                        <h3 class="image-title">Готовый дизайн</h3>
+                        <img src="{{ application.design_image.url }}"
+                             class="detail-image"
+                             alt="Готовый дизайн">
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="detail-info">
+                <h3 class="info-title">Информация о заявке</h3>
+
+                <div class="info-section">
+                    <div class="info-item">
+                        <span class="info-label">Описание:</span>
+                        <p class="info-value">{{ application.description }}</p>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">Категория:</span>
+                        <span class="info-badge">{{ application.category.name }}</span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">Дата создания:</span>
+                        <span class="info-value">{{ application.date|date:"d.m.Y H:i" }}</span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">Статус:</span>
+                        <span class="info-badge {{ application.status }}">
+                            {{ application.get_status_display }}
+                        </span>
+                    </div>
+
+                    {% if application.comment %}
+                        <div class="info-item">
+                            <span class="info-label">Комментарий дизайнера:</span>
+                            <p class="info-value">{{ application.comment }}</p>
+                        </div>
+                    {% endif %}
+
+                    <div class="info-item">
+                        <span class="info-label">Пользователь:</span>
+                        <span class="info-value">{{ application.applicant.username }}</span>
+                    </div>
+                </div>
+
+                {% if user == application.applicant and application.status == 'N' %}
+                    <div class="warning-box">
+                        Вы можете удалить эту заявку, так как она ещё не принята в работу.
+                    </div>
+
+                    <form method="post"
+                          action="{% url 'application-delete' application.id %}"
+                          onsubmit="return confirm('Вы уверены, что хотите удалить заявку?');">
+                        {% csrf_token %}
+                        <button type="submit" class="action-button delete-button">
+                            Удалить заявку
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="detail-footer">
+            <a href="{% url 'profile' %}" class="action-button back-button">
+                Назад к моим заявкам
+            </a>
+        </div>
+    </div>
+</div>
 {% endblock %}

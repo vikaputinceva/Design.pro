@@ -1,14 +1,50 @@
 from django import forms
-from django.contrib.auth.password_validation import password_changed
 from django.core.exceptions import ValidationError
-from .models import CustomUser, Application, Category
+from django.core.validators import RegexValidator
+from .models import CustomUser, Application
 
 
 class CustomUserCreatingForm(forms.ModelForm):
-    username = forms.CharField(label="Имя пользователя", max_length=150)
     email = forms.EmailField(label="Адрес электронной почты", max_length=150)
-    first_name = forms.CharField(label="Имя", max_length=150)
-    last_name = forms.CharField(label="Фамилия", max_length=150)
+
+    first_name = forms.CharField(
+        label="Имя",
+        max_length=150,
+        validators=[
+            RegexValidator(
+                regex=r'^[А-Яа-яёЁ\s\-]+$',
+                message='Имя должно содержать только кириллические буквы, пробелы и дефисы'
+            )
+        ]
+    )
+
+    last_name = forms.CharField(
+        label="Фамилия",
+        max_length=150,
+        validators=[
+            RegexValidator(
+                regex=r'^[А-Яа-яёЁ\s\-]+$',
+                message='Фамилия должна содержать только кириллические буквы, пробелы и дефисы'
+            )
+        ]
+    )
+
+    username = forms.CharField(
+        label="Имя пользователя",
+        max_length=150,
+        validators=[
+            RegexValidator(
+                regex=r'^[a-zA-Z\-]+$',
+                message='Логин должен содержать только латинские буквы и дефисы'
+            )
+        ]
+    )
+
+    agree_to_terms = forms.BooleanField(
+        label='Согласие на обработку персональных данных',
+        required=True
+    )
+
     password = forms.CharField(label="Пароль", widget=forms.PasswordInput)
     password_confirm = forms.CharField(label="Подтвердить пароль", widget=forms.PasswordInput)
 
@@ -25,20 +61,21 @@ class CustomUserCreatingForm(forms.ModelForm):
         return email
 
     def clean(self):
-        super().clean()
-        password = self.cleaned_data.get("password")
-        password_confirm = self.cleaned_data.get('password_confirm')
+        cleaned_data = super().clean()
+        password = cleaned_data.get("password")
+        password_confirm = cleaned_data.get('password_confirm')
+
         if password and password_confirm and password != password_confirm:
             self.add_error('password_confirm', "Пароли не совпадают")
 
-        return self.cleaned_data
+        return cleaned_data
 
     def save(self, commit=True):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data.get("password"))
         if commit:
             user.save()
-            return user
+        return user
 
     class Meta:
         model = CustomUser
@@ -69,9 +106,3 @@ class ApplicationForm(forms.ModelForm):
             raise ValidationError("Файл должен быть в формате JPG, JPEG, PNG или BMP")
 
         return image
-
-    def save(self, commit=True):
-        application = super().save(commit=False)
-        if commit:
-            application.save()
-        return application

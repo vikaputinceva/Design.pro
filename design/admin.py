@@ -1,20 +1,27 @@
 from django.contrib import admin
 from django import forms
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser, Category, Application
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.utils.html import format_html
+from .models import CustomUser, Category, Application
 
-# Register your models here.
+
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
-    list_display = ['username', 'email', 'first_name', 'last_name']
+    list_display = ['username', 'email', 'first_name', 'last_name', 'is_staff', 'is_active']
+    list_filter = ['is_staff', 'is_active', 'date_joined']
+    search_fields = ['username', 'email', 'first_name', 'last_name']
+    ordering = ['-date_joined']
+
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'email')}),
-        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
-        ('Important dates', {'fields': ('last_login', 'date_joined')}),
+        ('Персональная информация', {'fields': ('first_name', 'last_name', 'email')}),
+        ('Права доступа', {
+            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
+        }),
+        ('Важные даты', {'fields': ('last_login', 'date_joined')}),
     )
+
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
@@ -22,67 +29,93 @@ class CustomUserAdmin(UserAdmin):
         }),
     )
 
+
 class ApplicationAdminForm(forms.ModelForm):
     class Meta:
         model = Application
         fields = '__all__'
-        exclude = ['image']
-
-    design_image = forms.ImageField(required=False,
-                                    label='Фото готового дизайна (добавить, если статус меняется на "Выполнено")')
-    comment = forms.CharField(required=False,
-                              label='Комментарий к работе (добавить, если статус меняется на "Принято на работу")')
 
     def clean(self):
         cleaned_data = super().clean()
         status = cleaned_data.get('status')
-        current_status = self.instance.status if self.instance else None
 
-        if current_status in ['P', 'D'] and status != current_status:
-            raise ValidationError("Вы не можете поменять статус заявки, если она имеет статус 'Принято в работу' или 'Выполнено'")
 
         if status == 'P' and not cleaned_data.get('comment'):
-            raise ValidationError('Добавьте комментарий')
+            raise ValidationError('Для статуса "Принято в работу" необходим комментарий.')
+
 
         if status == 'D' and not cleaned_data.get('design_image'):
-            raise ValidationError('Добавьте фото готового дизайна')
+            raise ValidationError('Для статуса "Выполнено" необходимо загрузить изображение дизайна.')
 
         return cleaned_data
 
+
+@admin.register(Application)
 class ApplicationAdmin(admin.ModelAdmin):
     form = ApplicationAdminForm
-    list_display = ('user', 'title', 'status', 'category', 'date')
-    readonly_fields = ('user', 'title', 'description', 'category', 'date')
-    list_filter = ('status', 'category', 'created_at')
-    search_fields = ('title', 'user__username', 'description')
-    exclude = ['image']
+    list_display = ['id', 'title', 'get_applicant', 'status', 'category', 'date',
+                    'image_preview']  # исправлено: get_applicant
+    list_filter = ['status', 'category', 'date']
+    search_fields = ['title', 'applicant__username', 'description']
+    readonly_fields = ['date', 'image_preview_large', 'get_applicant']
+    list_editable = ['status']
+    list_per_page = 20
 
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('applicant', 'title', 'description', 'category', 'image')
+        }),
+        ('Статус и обработка', {
+            'fields': ('status', 'comment', 'design_image')
+        }),
+        ('Дополнительно', {
+            'fields': ('date', 'favorite', 'image_preview_large', 'get_applicant'),
+            'classes': ('collapse',)
+        }),
+    )
 
-        if obj:
-            status = obj.status
+    def get_applicant(self, obj):
+        return obj.applicant.username if obj.applicant else "-"
 
-            if status == 'P':
-                if 'design_image' in form.base_fields:
-                    form.base_fields['design_image'].required = False
-                    del form.base_fields['design_image']
+    get_applicant.short_description = 'Пользователь'
 
-            elif status == 'D':
-                if 'comment' in form.base_fields:
-                    form.base_fields['comment'].required = False
-                    del form.base_fields['comment']
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="max-height: 50px; max-width: 50px;" />',
+                obj.image.url
+            )
+        return "-"
 
-        return form
+    image_preview.short_description = 'Изображение'
 
-    def save_model(self, request, obj, form, change):
-        if form.is_valid():
-            obj.commit = form.cleaned_data.get('comment', '')
-            obj.design_image = form.cleaned_data.get('design_image', None)
-            with transaction.atomic():
-                obj.save()
+    def image_preview_large(self, obj):
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="max-height: 300px; max-width: 100%;" />',
+                obj.image.url
+            )
+        return "Нет изображения"
+
+    image_preview_large.short_description = 'Предпросмотр изображения'
 
 
-admin.site.register(Category)
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ['name', 'application_count']
+    search_fields = ['name']
+    ordering = ['name']
+
+    def application_count(self, obj):
+        return obj.application_set.count()
+
+    application_count.short_description = 'Количество заявок'
+
+
+
 admin.site.register(CustomUser, CustomUserAdmin)
-admin.site.register(Application)
+
+
+admin.site.site_title = 'Design.Pro Администрация'
+admin.site.site_header = 'Design.Pro - Панель управления'
+admin.site.index_title = 'Управление сайтом'

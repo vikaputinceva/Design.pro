@@ -1,125 +1,90 @@
 {% extends 'basic.html' %}
-{% load static %}
 
 {% block title %}Главная - Design.Pro{% endblock %}
 
 {% block content %}
-<div class="main-content">
+<div class="page-center">
     <h1 class="page-title">Design.Pro - Платформа дизайнерских проектов</h1>
 
-    {% if user.is_authenticated and not user.is_staff %}
-        <div class="create-prompt">
-            <p class="prompt-text">Есть идея для дизайнерского проекта?</p>
-            <a class="create-button" href="{% url 'application-create' %}">
-                <i class="bi bi-plus-circle me-2"></i>Создать заявку
-            </a>
-        </div>
+    <div class="stats-box">
+        <h3 class="stats-title">Статистика</h3>
+        <p class="stats-text">
+            Заявок в работе: <span class="stats-number">{{ in_progress|default:"0" }}</span>
+        </p>
+    </div>
 
-        <div class="stats-display">
-            <i class="bi bi-graph-up"></i>
-            Заявок в работе: <strong>{{ in_progress }}</strong>
-        </div>
+    {% if completed_applications %}
+        <h3 class="section-title">Последние выполненные проекты</h3>
 
-        {% if completed_applications %}
+        <div class="projects-grid">
             {% for application in completed_applications %}
-                <div class="application-item">
-                    <div class="app-header">
-                        <div class="app-title-section">
-                            <h3 class="app-title">{{ application.title }}</h3>
-                            {% if application.status == "N" %}
-                                <span class="status-badge status-new">Новая</span>
-                            {% elif application.status == "P" %}
-                                <span class="status-badge status-progress">В работе</span>
-                            {% elif application.status == "D" %}
-                                <span class="status-badge status-completed">Выполнено</span>
-                            {% endif %}
-                        </div>
-                        <div class="category-info">
-                            <i class="bi bi-tag"></i>
-                            Категория: {{ application.category|default:"Без категории" }}
-                        </div>
-                    </div>
-
-                    <div class="app-body">
-                        <div class="app-image-container">
-                            {% if application.image %}
-                                <img class="app-image" src="{{ application.image.url }}" alt="{{ application.title }}">
-                            {% else %}
-                                <div class="image-placeholder">
-                                    <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
-                                </div>
-                            {% endif %}
-                        </div>
-
-                        <div class="app-details">
-                            <div class="app-description-section">
-                                <p style="width: 100%; height: 60px; text-overflow: ellipsis; overflow: hidden; margin-bottom: 20px;">
-                                    {{ application.description }}
-                                </p>
-                            </div>
-
-                            <div class="app-meta-info">
-                                <div class="app-info-row">
-                                    <div class="info-item">
-                                        <i class="bi bi-calendar"></i>
-                                        <span>Дата создания: {{ application.date|date:"d.m.Y H:i" }}</span>
-                                    </div>
-                                    <div class="info-item">
-                                        <i class="bi bi-person-circle"></i>
-                                        <span>Создатель: {{ application.applicant.username }}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="app-actions d-flex justify-content-end mt-3">
-                                <a class="btn btn-success" href="{% url 'application-detail' application.pk %}">
-                                    <i class="bi bi-info-circle me-2"></i>Подробнее о заявке
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {% if not forloop.last %}
-                    <hr class="app-divider">
+            <div class="project-card">
+                {% if application.image %}
+                    <img src="{{ application.image.url }}"
+                         class="project-image"
+                         alt="{{ application.title }}">
                 {% endif %}
-            {% endfor %}
-        {% else %}
-            <div class="role-card" style="background: #f8f9fa; padding: 40px; text-align: center;">
-                <div class="role-icon">
-                    <i class="bi bi-folder-plus" style="color: #6c757d; font-size: 3rem;"></i>
+
+                <div class="project-content">
+                    <div class="project-title">{{ application.title|truncatechars:25 }}</div>
+
+                    <div class="project-category">
+                        {{ application.category.name }}
+                    </div>
+
+                    <div class="project-date">
+                        {{ application.date|date:"d.m.Y H:i" }}
+                    </div>
                 </div>
-                <h3 class="role-title">Нет выполненных заявок</h3>
-                <p class="role-description">Создайте свою первую заявку</p>
-                <a href="{% url 'application-create' %}" class="create-button">
-                    <i class="bi bi-plus-circle me-2"></i>Создать заявку
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+        {% if user.is_staff %}
+            <div class="info-box admin-box">
+                <h3 class="info-title">Вы вошли как администратор</h3>
+                <p class="info-text">Для управления заявками и категориями используйте админ-панель:</p>
+                <a href="/superadmin/" class="action-button admin-button" target="_blank">
+                    Перейти в админ-панель
+                </a>
+            </div>
+        {% else %}
+            <div class="info-box user-box">
+                <h3 class="info-title">Добро пожаловать, {{ user.first_name }}!</h3>
+                <p class="info-text">У вас есть идея для дизайнерского проекта? Создайте заявку!</p>
+                <a href="{% url 'application-create' %}" class="action-button create-button">
+                    Создать новую заявку
                 </a>
             </div>
         {% endif %}
-
     {% else %}
         <div class="roles-container">
             <div class="role-card">
-                <div class="role-icon" style="color: #0d6efd;">
-                    <i class="bi bi-briefcase"></i>
-                </div>
                 <h3 class="role-title">Заказчикам</h3>
-                <p class="role-description">Размещайте заявки на дизайнерские услуги и находите лучших исполнителей</p>
-                <a href="{% url 'register' %}" class="btn btn-primary">
-                    <i class="bi bi-person-plus me-2"></i>Начать работу
+                <p class="role-text">
+                    Размещайте заявки на дизайнерские услуги и находите лучших исполнителей
+                </p>
+                <a href="{% url 'register' %}" class="role-button client-button">
+                    Начать работу
                 </a>
             </div>
 
             <div class="role-card">
-                <div class="role-icon" style="color: #198754;">
-                    <i class="bi bi-palette"></i>
-                </div>
                 <h3 class="role-title">Дизайнерам</h3>
-                <p class="role-description">Находите интересные проекты, развивайте портфолио и зарабатывайте</p>
-                <a href="{% url 'register' %}" class="btn btn-success">
-                    <i class="bi bi-arrow-right-circle me-2"></i>Присоединиться
+                <p class="role-text">
+                    Находите интересные проекты, развивайте портфолио и зарабатывайте
+                </p>
+                <a href="{% url 'register' %}" class="role-button designer-button">
+                    Присоединиться
                 </a>
             </div>
+        </div>
+
+        <div class="login-prompt">
+            <p class="prompt-text">Уже есть аккаунт?</p>
+            <a href="{% url 'login' %}" class="prompt-button">Войти в систему</a>
         </div>
     {% endif %}
 </div>
