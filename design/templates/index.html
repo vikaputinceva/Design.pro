@@ -5,14 +5,12 @@
 {% block content %}
 <div class="page-center">
     <h1 class="page-title">Design.Pro - Платформа дизайнерских проектов</h1>
-
     <div class="stats-box">
         <h3 class="stats-title">Статистика</h3>
         <p class="stats-text">
             Заявок в работе: <span class="stats-number">{{ in_progress|default:"0" }}</span>
         </p>
     </div>
-
     {% if completed_applications %}
         <h3 class="section-title">Последние выполненные проекты</h3>
 
@@ -45,10 +43,7 @@
         {% if user.is_staff %}
             <div class="info-box admin-box">
                 <h3 class="info-title">Вы вошли как администратор</h3>
-                <p class="info-text">Для управления заявками и категориями используйте админ-панель:</p>
-                <a href="/superadmin/" class="action-button admin-button" target="_blank">
-                    Перейти в админ-панель
-                </a>
+                <p class="info-text">Для управления заявками и категориями используйте админ-панель</p>
             </div>
         {% else %}
             <div class="info-box user-box">

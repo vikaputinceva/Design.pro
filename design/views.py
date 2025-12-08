@@ -4,8 +4,9 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.forms import AuthenticationForm
 from django.views import generic
 from django.urls import reverse_lazy
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required, user_passes_test
+
 
 from .forms import CustomUserCreatingForm, ApplicationForm
 from .models import CustomUser, Application, Category
@@ -14,9 +15,6 @@ from .models import CustomUser, Application, Category
 def index(request):
     completed_applications = Application.objects.filter(status="D").select_related('category').order_by('-date')[:4]
     in_progress = Application.objects.filter(status="P").count()
-
-
-
     context = {
         'completed_applications': completed_applications,
         'in_progress': in_progress,
@@ -68,10 +66,10 @@ class Profile(LoginRequiredMixin, generic.View):
 
         if status_filter:
             applications = Application.objects.filter(applicant=request.user, status=status_filter).order_by(
-                '-date')  # исправлено: user → applicant
+                '-date')
         else:
             applications = Application.objects.filter(applicant=request.user).order_by(
-                '-date')  # исправлено: user → applicant
+                '-date')
 
         context = {
             'user': request.user,
@@ -129,3 +127,88 @@ def delete_application(request, pk):
     application.delete()
     messages.success(request, 'Заявка успешно удалена.')
     return redirect('profile')
+
+def is_admin(user):
+    return user.is_authenticated and user.is_staff
+
+
+@user_passes_test(is_admin, login_url='login')
+def simple_admin_panel(request):
+    stats = {
+        'total': Application.objects.count(),
+        'new': Application.objects.filter(status='N').count(),
+        'in_work': Application.objects.filter(status='P').count(),
+        'completed': Application.objects.filter(status='D').count(),
+    }
+
+    recent_apps = Application.objects.select_related('applicant', 'category')[:10]
+
+    categories = Category.objects.all()
+
+    context = {
+        'stats': stats,
+        'recent_apps': recent_apps,
+        'categories': categories,
+    }
+
+    return render(request, 'admin/simple_panel.html', context)
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_change_status(request, pk):
+    application = get_object_or_404(Application, pk=pk)
+
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        comment = request.POST.get('comment', '')
+
+        if new_status == 'P' and not comment:
+            messages.error(request, 'Для статуса "Принято в работу" нужен комментарий')
+            return redirect('simple_admin_panel')
+
+        if new_status == 'D' and 'design_image' not in request.FILES:
+            messages.error(request, 'Для статуса "Выполнено" нужно загрузить дизайн')
+            return redirect('simple_admin_panel')
+
+        application.status = new_status
+        if comment:
+            application.comment = comment
+        if 'design_image' in request.FILES:
+            application.design_image = request.FILES['design_image']
+        application.save()
+
+        messages.success(request, 'Статус обновлен')
+        return redirect('simple_admin_panel')
+
+    return redirect('simple_admin_panel')
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_delete_category(request):
+    if request.method == 'POST':
+        category_id = request.POST.get('category_id')
+        try:
+            category = Category.objects.get(id=category_id)
+            category_name = category.name
+            category.delete()
+            messages.success(request, f'Категория "{category_name}" удалена')
+        except Category.DoesNotExist:
+            messages.error(request, 'Категория не найдена')
+
+    return redirect('simple_admin_panel')
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_add_category(request):
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        if name:
+            if Category.objects.filter(name=name).exists():
+                messages.error(request, 'Такая категория уже есть')
+            else:
+                Category.objects.create(name=name)
+                messages.success(request, f'Категория "{name}" добавлена')
+        else:
+            messages.error(request, 'Введите название категории')
+
+    return redirect('simple_admin_panel')

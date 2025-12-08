@@ -15,9 +15,8 @@
         <nav class="main-nav">
             {% if user.is_authenticated %}
                 {% if user.is_staff %}
-                    <a class="nav-item" href="/superadmin/" target="_blank">
-                        Админ-панель
-                    </a>
+                    <a class="nav-item" href="{% url 'simple_admin_panel' %}">Админ-панель</a>
+                    <a class="nav-item" href="/admin/">Django Admin</a>
                 {% endif %}
                 <a class="nav-item" href="{% url 'profile' %}">
                     Профиль

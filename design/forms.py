@@ -6,7 +6,6 @@ from .models import CustomUser, Application
 
 class CustomUserCreatingForm(forms.ModelForm):
     email = forms.EmailField(label="Адрес электронной почты", max_length=150)
-
     first_name = forms.CharField(
         label="Имя",
         max_length=150,
@@ -17,7 +16,6 @@ class CustomUserCreatingForm(forms.ModelForm):
             )
         ]
     )
-
     last_name = forms.CharField(
         label="Фамилия",
         max_length=150,
@@ -28,7 +26,6 @@ class CustomUserCreatingForm(forms.ModelForm):
             )
         ]
     )
-
     username = forms.CharField(
         label="Имя пользователя",
         max_length=150,

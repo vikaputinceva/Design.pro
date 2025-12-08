@@ -1,0 +1,195 @@
+{% extends 'basic.html' %}
+{% block title %}Админ-панель — Design.Pro{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1 class="page-title">Админ-панель Design.Pro</h1>
+        <p class="admin-welcome">Добро пожаловать, {{ user.first_name }}! Вы вошли в систему как администратор.</p>
+    </div>
+
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+        <div class="alert-message {{ message.tags }}">
+            {{ message }}
+            <button class="alert-close" onclick="this.parentElement.style.display='none'">×</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="stats-box">
+        <h2 class="section-title">Статистика</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.total }}</div>
+                <div class="stat-label">Всего заявок</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.new }}</div>
+                <div class="stat-label">Новые</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.in_work }}</div>
+                <div class="stat-label">В работе</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.completed }}</div>
+                <div class="stat-label">Выполнено</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-section">
+        <div class="section-header">
+            <h2 class="section-title">Управление заявками</h2>
+        </div>
+
+        {% if recent_apps %}
+        <div class="admin-table-container">
+            <div class="admin-table-header">
+                <h2>Список заявок</h2>
+                <div class="admin-table-controls">
+                    <input type="text" class="admin-search" placeholder="Поиск...">
+                    <select class="admin-filter">
+                        <option value="">Все статусы</option>
+                        <option value="N">Новые</option>
+                        <option value="P">В работе</option>
+                        <option value="D">Выполнено</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Название</th>
+                            <th>Пользователь</th>
+                            <th>Статус</th>
+                            <th>Дата</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in recent_apps %}
+                        <tr>
+                            <td>#{{ app.id }}</td>
+                            <td>{{ app.title|truncatechars:30 }}</td>
+                            <td>{{ app.applicant.username }}</td>
+                            <td>
+                                {% if app.status == 'N' %}
+                                    <span class="admin-status-badge admin-status-new">Новая</span>
+                                {% elif app.status == 'P' %}
+                                    <span class="admin-status-badge admin-status-work">В работе</span>
+                                {% else %}
+                                    <span class="admin-status-badge admin-status-done">Выполнено</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ app.date|date:"d.m.Y" }}</td>
+                            <td>
+                                <form method="post" action="{% url 'admin_change_status' app.id %}" class="status-form">
+                                    {% csrf_token %}
+                                    <select name="status" class="form-select">
+                                        <option value="N" {% if app.status == 'N' %}selected{% endif %}>Новая</option>
+                                        <option value="P" {% if app.status == 'P' %}selected{% endif %}>Принято в работу</option>
+                                        <option value="D" {% if app.status == 'D' %}selected{% endif %}>Выполнено</option>
+                                    </select>
+
+                                    <div class="form-fields">
+                                        {% if app.status == 'P' or app.status == 'D' %}
+                                        <div class="form-group">
+                                            <label class="form-label">Комментарий:</label>
+                                            <textarea name="comment" rows="2" placeholder="Введите комментарий"
+                                                      class="form-textarea">{{ app.comment|default:'' }}</textarea>
+                                        </div>
+                                        {% endif %}
+
+                                        {% if app.status == 'D' %}
+                                        <div class="form-group">
+                                            <label class="form-label">Фото дизайна:</label>
+                                            <input type="file" name="design_image" class="form-file">
+                                        </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <button type="submit" class="admin-btn admin-btn-primary">Сохранить</button>
+                                </form>
+
+                                {% if app.status == 'N' %}
+                                <form method="post" action="{% url 'application-delete' app.id %}"
+                                      onsubmit="return confirm('Удалить заявку?')" class="delete-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="admin-btn admin-btn-danger">Удалить заявку</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="admin-empty-state">
+            <div class="admin-empty-icon">📭</div>
+            <h3 class="admin-empty-title">Нет заявок</h3>
+            <p class="admin-empty-text">Заявок пока не создано</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="admin-section">
+        <div class="section-header">
+            <h2 class="section-title">Управление категориями</h2>
+        </div>
+
+        <div class="admin-form">
+            <form method="post" action="{% url 'admin_add_category' %}" class="category-form">
+                {% csrf_token %}
+                <div class="admin-form-group">
+                    <label for="category-name" class="form-label">Название категории:</label>
+                    <div class="input-group">
+                        <input type="text" name="name" id="category-name"
+                               placeholder="Введите название категории" required class="admin-form-control">
+                        <button type="submit" class="admin-btn admin-btn-success">Добавить</button>
+                    </div>
+                </div>
+            </form>
+
+            {% if categories %}
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Название</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category in categories %}
+                        <tr>
+                            <td>{{ category.name }}</td>
+                            <td>
+                                <form method="post" action="{% url 'admin_delete_category' %}"
+                                      onsubmit="return confirm('Удалить категорию? Все заявки в этой категории будут удалены!')">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="category_id" value="{{ category.id }}">
+                                    <button type="submit" class="admin-btn admin-btn-danger">Удалить</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="admin-warning">
+                <p>Нет созданных категорий</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

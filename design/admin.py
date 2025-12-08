@@ -54,7 +54,7 @@ class ApplicationAdminForm(forms.ModelForm):
 class ApplicationAdmin(admin.ModelAdmin):
     form = ApplicationAdminForm
     list_display = ['id', 'title', 'get_applicant', 'status', 'category', 'date',
-                    'image_preview']  # исправлено: get_applicant
+                    'image_preview']
     list_filter = ['status', 'category', 'date']
     search_fields = ['title', 'applicant__username', 'description']
     readonly_fields = ['date', 'image_preview_large', 'get_applicant']
